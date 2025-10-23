@@ -2,18 +2,24 @@ const WebSocket = require('ws');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const url = require('url');
 
 const PORT = process.env.PORT || 8080;
 
 // Create HTTP server that serves static files
 const server = http.createServer((req, res) => {
-    console.log('HTTP Request:', req.url);
+    // Parse URL to separate path from query string
+    const parsedUrl = url.parse(req.url);
+    const pathname = parsedUrl.pathname;
     
-    // Determine which file to serve
+    console.log('HTTP Request:', req.url);
+    console.log('Pathname:', pathname);
+    
+    // Determine which file to serve based on pathname only
     let filePath;
-    if (req.url === '/' || req.url === '/index.html') {
+    if (pathname === '/' || pathname === '/index.html') {
         filePath = path.join(__dirname, 'index.html');
-    } else if (req.url === '/client.js') {
+    } else if (pathname === '/client.js') {
         filePath = path.join(__dirname, 'client.js');
     } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
