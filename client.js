@@ -18,6 +18,7 @@ let peerConnections = {};
 let roomId = null;
 let username = null;
 let isPresenter = false;
+let userId = null;
 
 // DOM elements
 const usernameInput = document.getElementById('username');
@@ -33,6 +34,63 @@ const viewerCount = document.getElementById('viewerCount');
 const viewerList = document.getElementById('viewerList');
 const viewerListContainer = document.getElementById('viewerListContainer');
 const videoTitle = document.getElementById('videoTitle');
+
+// Parse URL parameters on page load
+window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const userIdParam = urlParams.get('userId');
+    const actionParam = urlParams.get('action');
+    const targetUserParam = urlParams.get('targetUser');
+
+    if (userIdParam) {
+        userId = userIdParam;
+        username = `User_${userId}`;
+        usernameInput.value = username;
+
+        if (actionParam === 'create') {
+            // Auto-create room for this user
+            roomId = `room_${userId}`;
+            roomIdInput.value = roomId;
+            
+            // Show message
+            showAutoMessage(`Creating screen share room for User ${userId}...`);
+            
+            // Auto-connect after a brief delay
+            setTimeout(() => {
+                connectToRoom();
+            }, 500);
+        } else if (actionParam === 'join' && targetUserParam) {
+            // Auto-join target user's room
+            roomId = `room_${targetUserParam}`;
+            roomIdInput.value = roomId;
+            
+            // Show message
+            showAutoMessage(`Joining User ${targetUserParam}'s screen share...`);
+            
+            // Auto-connect after a brief delay
+            setTimeout(() => {
+                connectToRoom();
+            }, 500);
+        }
+    }
+});
+
+// Show auto-connection message
+function showAutoMessage(message) {
+    const infoBox = document.querySelector('.info-box');
+    if (infoBox) {
+        const autoMsg = document.createElement('p');
+        autoMsg.style.color = '#2196f3';
+        autoMsg.style.fontWeight = 'bold';
+        autoMsg.textContent = `🔄 ${message}`;
+        infoBox.insertBefore(autoMsg, infoBox.firstChild);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            autoMsg.remove();
+        }, 3000);
+    }
+}
 
 // Event listeners
 connectBtn.addEventListener('click', connectToRoom);
