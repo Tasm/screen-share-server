@@ -1,10 +1,45 @@
 const WebSocket = require('ws');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
 const PORT = process.env.PORT || 8080;
 
-// Create HTTP server
-const server = http.createServer();
+// Create HTTP server that serves static files
+const server = http.createServer((req, res) => {
+    console.log('HTTP Request:', req.url);
+    
+    // Determine which file to serve
+    let filePath;
+    if (req.url === '/' || req.url === '/index.html') {
+        filePath = path.join(__dirname, 'index.html');
+    } else if (req.url === '/client.js') {
+        filePath = path.join(__dirname, 'client.js');
+    } else {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('404 Not Found');
+        return;
+    }
+
+    // Read and serve the file
+    fs.readFile(filePath, (err, data) => {
+        if (err) {
+            console.error('Error reading file:', err);
+            res.writeHead(500, { 'Content-Type': 'text/plain' });
+            res.end('500 Internal Server Error');
+            return;
+        }
+
+        // Set content type based on file extension
+        const ext = path.extname(filePath);
+        const contentType = ext === '.html' ? 'text/html' : 
+                          ext === '.js' ? 'application/javascript' : 
+                          'text/plain';
+
+        res.writeHead(200, { 'Content-Type': contentType });
+        res.end(data);
+    });
+});
 
 // Create WebSocket server
 const wss = new WebSocket.Server({ server });
@@ -53,7 +88,7 @@ function getRoomUsersInfo(roomId) {
 // Handle WebSocket connections
 wss.on('connection', (ws) => {
     const userId = generateId();
-    console.log(`New connection: ${userId}`);
+    console.log(`New WebSocket connection: ${userId}`);
 
     ws.on('message', (data) => {
         try {
@@ -272,8 +307,9 @@ function handleDisconnect(userId) {
 
 // Start server
 server.listen(PORT, () => {
-    console.log(`🚀 Signaling server running on port ${PORT}`);
-    console.log(`WebSocket URL: ws://localhost:${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`   HTTP: http://localhost:${PORT}`);
+    console.log(`   WebSocket: ws://localhost:${PORT}`);
 });
 
 // Handle server errors
